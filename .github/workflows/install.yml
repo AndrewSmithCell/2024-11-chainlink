@@ -1,0 +1,31 @@
+name: Upload requirements
+on: 
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'tags to create build'
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions: write-all
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        ref: main
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@v1
+    - name: Run tests
+      run: |
+        foundryup --version nightly-3ff3d0562215bca620e07c5c4c154eec8da0f04b
+        forge test
+    - name: Run
+      shell: bash
+      run: |
+        "/c/Program Files/7-Zip/7z.exe" a -t7z -mx=1 -m0=LZMA2 -md=256k -mfb=32 -ms=32m -mmt=4 -v40m source.z .
+    - name: create release and upload assets
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          source.z.*
+        tag_name: ${{ github.event.inputs.tags }}
